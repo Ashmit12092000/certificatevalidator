@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Manage Customers – Agents SSO Master{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+  <h1 class="text-2xl font-bold mb-4">Manage Customers</h1>
+
+  <div class="mb-4">
+    <input type="text" id="filterName" placeholder="Customer Name" class="border p-2 rounded mr-2"/>
+    <input type="text" id="filterEmail" placeholder="Email" class="border p-2 rounded mr-2"/>
+    <input type="text" id="filterGST" placeholder="GST" class="border p-2 rounded mr-2"/>
+    <button onclick="applyFilters()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Filter</button>
+  </div>
+
+  <table class="min-w-full bg-white rounded shadow">
+    <thead class="bg-gray-200">
+      <tr>
+        {% if session['role'] == 'admin' %}
+      <th class="p-3">Assign/Edit ID</th>
+      {% endif %}
+        <th class="p-3">Customer ID</th>
+        <th class="p-3">Name</th>
+        <th class="p-3">Email</th>
+        <th class="p-3">Phone</th>
+        <th class="p-3">PAN</th>
+        <th class="p-3">GST</th>
+        <th class="p-3">Address</th>
+        {% if session.role == 'admin' %}
+        <th class="p-3">Actions</th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody id="customerTable">
+      {% for cust in customers %}
+      <tr  class="border-t">
+        {% if session['role'] == 'admin' %}
+    <td class="py-2 px-4">
+        <form action="{{ url_for('update_customer_code') }}" method="POST" class="flex space-x-2">
+            <input type="hidden" name="customer_id" value="{{ cust['id'] }}">
+            <input type="text" name="customer_code" value="{{ cust['code'] or '' }}" class="border px-2 py-1 text-sm w-24" placeholder="Enter ID">
+            <button type="submit" class="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700">Save</button>
+        </form>
+    </td>
+    {% endif %}
+        <td class="p-3">{{ cust.code }}</td>
+
+        <td class="p-3">{{ cust.name }}</td>
+        <td class="p-3">{{ cust.email }}</td>
+        <td class="p-3">{{ cust.phone }}</td>
+        <td class="p-3">{{ cust.pan }}</td>
+        <td class="p-3">{{ cust.gst }}</td>
+        <td class="p-3">{{ cust.address or '—' }}</td>
+        <td class="p-3">
+          {% if session.role == 'admin' %}
+          <form action="/delete-customer/{{ cust.id }}" method="POST" onsubmit="return confirm('Delete this customer and all certificates?')">
+            <button type="submit" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Delete</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+function applyFilters(){
+  let name = document.getElementById('filterName').value.toLowerCase();
+  let email = document.getElementById('filterEmail').value.toLowerCase();
+  let gst  = document.getElementById('filterGST').value.toLowerCase();
+  document.querySelectorAll('#customerTable tr').forEach(r=>{
+    let cols = r.querySelectorAll('td');
+    let show = true;
+    if(name && !cols[0].textContent.toLowerCase().includes(name)) show = false;
+    if(email && !cols[1].textContent.toLowerCase().includes(email)) show = false;
+    if(gst  && !cols[4].textContent.toLowerCase().includes(gst))  show = false;
+    r.style.display = show ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

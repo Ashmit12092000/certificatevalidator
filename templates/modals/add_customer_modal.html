@@ -1,0 +1,26 @@
+<div id="addCustomerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+    <div class="bg-white w-full max-w-md rounded shadow p-6">
+      <h2 class="text-xl font-bold mb-4">Add Customer</h2>
+      <form action="{{ url_for('add_customer') }}" method="POST" class="space-y-4">
+        <label class="block mb-2">Customer ID</label>
+          <input type="text" name="code" placeholder="Customer ID" required class="w-full p-2 border rounded">
+        <label class="block mb-2">Name</label>
+          <input name="name" type="text" placeholder="Name" required class="w-full p-2 border rounded"/>
+        <label class="block mb-2">Email</label>  
+          <input name="email" type="email" placeholder="Email" class="w-full p-2 border rounded"/>
+        <label class="block mb-2">Phone</label>
+          <input name="phone" type="text" placeholder="Phone" class="w-full p-2 border rounded"/>
+        <label class="block mb-2">PAN</label>
+          <input name="pan" type="text" placeholder="PAN" class="w-full p-2 border rounded"/>
+        <label class="block mb-2">GST</label>
+          <input name="gst" type="text" placeholder="GST" class="w-full p-2 border rounded"/>
+        <label class="block mb-2">Address</label>
+          <input name="address" type="text" placeholder="Address" class="w-full p-2 border rounded"/>
+        <div class="flex justify-end space-x-2">
+          <button type="button" onclick="addCustomerModal.classList.add('hidden')"
+                  class="px-4 py-2 border rounded">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>

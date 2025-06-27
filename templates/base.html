@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}Agents SSO Master{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+  <!-- Navbar -->
+  {% if request.endpoint not in ['login', 'signup'] %}
+  <nav class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-4">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Kakinada Seaports Limited" class="h-10"/>
+        <span class="text-xl font-bold">Agents SSO Master</span>
+      </div>
+      <div class="flex space-x-4">
+        <a href="{{ url_for('dashboard') }}" class="hover:text-blue-600">Dashboard</a>
+        <a href="{{ url_for('manage_customers') }}" class="hover:text-blue-600">Manage Customers</a>
+        <a href="{{ url_for('report') }}" class="hover:text-blue-600">Customer Report</a>
+      </div>
+      <div>
+        {% if session.user_email %}
+          <span class="mr-4">{{ session.user_email }}</span>
+          <a href="{{ url_for('logout') }}" class="text-red-600 hover:underline">Logout</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+  {% endif %}
+
+  <!-- Page content -->
+  <main class="flex-grow">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="bg-white shadow-inner py-4 text-center text-gray-600">
+    &copy; {{ current_year }} Kakinada Seaports Limited
+  </footer>
+</body>
+</html>

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Customer Report – Agents SSO Master{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+  <h1 class="text-2xl font-bold mb-4">Customer Report</h1>
+  <div class="flex gap-4 mb-4">
+    
+    <input type="text" id="fName" placeholder="Customer Name" class="border p-2 rounded"/>
+    <select id="fStatus" class="border p-2 rounded">
+      <option value="">All Status</option>
+      <option>Active</option>
+      <option>Expired</option>
+      <option>Unverified</option>
+    </select>
+    <select id="fType" class="border p-2 rounded">
+      <option value="">All Types</option>
+      {% for t in cert_types %}
+        <option>{{ t }}</option>
+      {% endfor %}
+    </select>
+    <button onclick="applyReportFilters()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Filter</button>
+    <a href="{{ url_for('download_report', name=request.args.get('name',''), status=request.args.get('status',''), type=request.args.get('type','')) }}"
+       class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Download Report CSV</a>
+  </div>
+
+  <table class="min-w-full bg-white rounded shadow">
+    <thead class="bg-gray-200">
+      <tr>
+        <th class="p-3">Customer ID</th>
+        <th class="p-3">Customer</th>
+        <th class="p-3">Type</th>
+        <th class="p-3">Status</th>
+        <th class="p-3">Activation</th>
+        <th class="p-3">Expiry</th>
+        <th class="p-3">Total Certs</th>
+      </tr>
+    </thead>
+    <tbody id="reportTable">
+      {% for row in report %}
+      <tr class="border-t">
+        <td class="p-3">{{ row.customer_code }}</td>
+        <td class="p-3">{{ row.customer_name }}</td>
+        <td class="p-3">{{ row.cert_type }}</td>
+        <td class="p-3">{{ row.status }}</td>
+        <td class="p-3">{{ row.activation_date }}</td>
+        <td class="p-3">{{ row.expiration_date }}</td>
+        <td class="p-3">{{ row.total_certs }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+function applyReportFilters(){
+  const params = new URLSearchParams();
+  const name = document.getElementById('fName').value;
+  const status = document.getElementById('fStatus').value;
+  const type = document.getElementById('fType').value;
+  if(name) params.set('name', name);
+  if(status) params.set('status', status);
+  if(type) params.set('type', type);
+  window.location = "{{ url_for('report') }}?" + params.toString();
+}
+</script>
+{% endblock %}
