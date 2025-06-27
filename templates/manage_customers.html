@@ -14,9 +14,6 @@
   <table class="min-w-full bg-white rounded shadow">
     <thead class="bg-gray-200">
       <tr>
-        {% if session['role'] == 'admin' %}
-      <th class="p-3">Assign/Edit ID</th>
-      {% endif %}
         <th class="p-3">Customer ID</th>
         <th class="p-3">Name</th>
         <th class="p-3">Email</th>
@@ -32,17 +29,8 @@
     <tbody id="customerTable">
       {% for cust in customers %}
       <tr  class="border-t">
-        {% if session['role'] == 'admin' %}
-    <td class="py-2 px-4">
-        <form action="{{ url_for('update_customer_code') }}" method="POST" class="flex space-x-2">
-            <input type="hidden" name="customer_id" value="{{ cust['id'] }}">
-            <input type="text" name="customer_code" value="{{ cust['code'] or '' }}" class="border px-2 py-1 text-sm w-24" placeholder="Enter ID">
-            <button type="submit" class="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700">Save</button>
-        </form>
-    </td>
-    {% endif %}
+       
         <td class="p-3">{{ cust.code }}</td>
-
         <td class="p-3">{{ cust.name }}</td>
         <td class="p-3">{{ cust.email }}</td>
         <td class="p-3">{{ cust.phone }}</td>
@@ -67,14 +55,15 @@ function applyFilters(){
   let name = document.getElementById('filterName').value.toLowerCase();
   let email = document.getElementById('filterEmail').value.toLowerCase();
   let gst  = document.getElementById('filterGST').value.toLowerCase();
-  document.querySelectorAll('#customerTable tr').forEach(r=>{
+  document.querySelectorAll('#customerTable tr').forEach(r => {
     let cols = r.querySelectorAll('td');
     let show = true;
-    if(name && !cols[0].textContent.toLowerCase().includes(name)) show = false;
-    if(email && !cols[1].textContent.toLowerCase().includes(email)) show = false;
-    if(gst  && !cols[4].textContent.toLowerCase().includes(gst))  show = false;
+    if(name && !cols[1].textContent.toLowerCase().includes(name)) show = false;
+    if(email && !cols[2].textContent.toLowerCase().includes(email)) show = false;
+    if(gst && !cols[5].textContent.toLowerCase().includes(gst)) show = false;
     r.style.display = show ? '' : 'none';
   });
 }
+
 </script>
 {% endblock %}
