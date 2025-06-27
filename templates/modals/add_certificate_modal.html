@@ -9,12 +9,12 @@
           {% endfor %}
         </select>
         <label class="block text-sm font-medium mb-1 mt-4">Certificate Type</label>
-<select name="cert_type" class="w-full border rounded px-3 py-2" required>
-    <option value="">-- Select Certificate Type --</option>
-    {% for cert_type in cert_types %}
-        <option value="{{ cert_type }}">{{ cert_type }}</option>
-    {% endfor %}
-</select>
+        <select name="cert_type" required class="border px-3 py-2 rounded w-full">
+          <option value="">-- Select Certificate Type --</option>
+          {% for cert in cert_types %}
+            <option value="{{ cert }}">{{ cert }}</option>
+          {% endfor %}
+        </select>
 <label class="block text-sm font-medium mb-1 mt-4">Expiration Date</label>
         <input name="expiration_date" type="date" required class="w-full p-2 border rounded"/>
         <div class="flex justify-end space-x-2">
