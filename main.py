@@ -54,6 +54,10 @@ def init_db():
             verified INTEGER DEFAULT 0,
             FOREIGN KEY(customer_id) REFERENCES customers(id)
         )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS certificate_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL
+        )''')
         conn.commit()
 
 # --- Helper Functions ---
@@ -124,8 +128,14 @@ def dashboard():
     """).fetchall()
 
     all_customers = conn.execute("SELECT id, name, code FROM customers ORDER BY name").fetchall()
-    cert_types = [row['cert_type'] for row in conn.execute("SELECT DISTINCT cert_type FROM certificates").fetchall()]
+    cert_types_query = conn.execute("""
+        SELECT name FROM certificate_types
+        UNION
+        SELECT DISTINCT cert_type FROM certificates
+        ORDER BY name ASC
+    """).fetchall()
 
+    cert_types = [ct[0] for ct in cert_types_query]       
     conn.close()
 
     return render_template("dashboard.html",
@@ -267,29 +277,6 @@ def import_csv():
         flash(f"❌ Import failed: {e}", "error")
 
     return redirect(url_for('dashboard'))
-@app.route('/update-customer-code', methods=["POST"])
-def update_customer_code():
-    if 'user_id' not in session or session.get('role') != 'admin':
-        flash("Unauthorized access", "error")
-        return redirect(url_for('manage_customers'))
-
-    customer_id = request.form.get("customer_id")
-    customer_code = request.form.get("customer_code").strip()
-
-    if not customer_code:
-        flash("Customer ID cannot be empty.", "error")
-        return redirect(url_for('manage_customers'))
-
-    try:
-        conn = get_db_connection()
-        conn.execute("UPDATE customers SET code = ? WHERE id = ?", (customer_code, customer_id))
-        conn.commit()
-        conn.close()
-        flash("Customer ID updated successfully!", "success")
-    except Exception as e:
-        flash(f"Failed to update customer ID: {e}", "error")
-
-    return redirect(url_for('manage_customers'))
 
 @app.route('/manage-customers')
 def manage_customers():
@@ -300,6 +287,62 @@ def manage_customers():
     customers = conn.execute("SELECT * FROM customers ORDER BY name ASC").fetchall()
     conn.close()
     return render_template("manage_customers.html", customers=customers)
+@app.route('/manage-certificates')
+def manage_certificates():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    manual_types = conn.execute("SELECT name, 'manual' as source FROM certificate_types").fetchall()
+    auto_types = conn.execute("SELECT DISTINCT cert_type as name, 'auto' as source FROM certificates").fetchall()
+    conn.close()
+
+    combined = manual_types + [r for r in auto_types if r['name'] not in [m['name'] for m in manual_types]]
+    return render_template("manage_certificates.html", cert_types=combined)
+@app.route('/add-cert-type', methods=['POST'])
+def add_certificate_type():
+    if 'user_id' not in session or session.get("role") != "admin":
+        flash("Unauthorized", "error")
+        return redirect(url_for('manage_certificates'))
+
+    name = request.form.get('cert_name', '').strip()
+    if not name:
+        flash("Certificate name required", "error")
+        return redirect(url_for('manage_certificates'))
+
+    try:
+        conn = get_db_connection()
+        conn.execute("INSERT INTO certificate_types (name) VALUES (?)", (name,))
+        conn.commit()
+        conn.close()
+        flash("Certificate type added successfully!", "success")
+    except sqlite3.IntegrityError:
+        flash("Certificate type already exists.", "error")
+
+    return redirect(url_for('manage_certificates'))
+@app.route('/delete-certificate-type', methods=["POST"])
+def delete_certificate_type():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash("Unauthorized", "error")
+        return redirect(url_for('manage_certificates'))
+
+    name = request.form.get("name").strip()
+    source = request.form.get("source")
+
+    conn = get_db_connection()
+    try:
+        if source == 'manual':
+            conn.execute("DELETE FROM certificate_types WHERE name = ?", (name,))
+        elif source == 'auto':
+            conn.execute("DELETE FROM certificates WHERE cert_type = ?", (name,))
+        conn.commit()
+        flash(f"Deleted certificate type: {name}", "success")
+    except Exception as e:
+        flash(f"Error deleting certificate type: {e}", "error")
+    finally:
+        conn.close()
+
+    return redirect(url_for('manage_certificates'))
 @app.route('/report')
 def report():
     if 'user_id' not in session:
