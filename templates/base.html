@@ -18,7 +18,11 @@
       </div>
       <div class="flex space-x-4">
         <a href="{{ url_for('dashboard') }}" class="hover:text-blue-600">Dashboard</a>
+        
         <a href="{{ url_for('manage_customers') }}" class="hover:text-blue-600">Manage Customers</a>
+        {% if session.get('role') == 'admin' %}
+          <a href="{{ url_for('manage_certificates') }}" class="hover:underline">Manage Certificates</a>
+        {% endif %}
         <a href="{{ url_for('report') }}" class="hover:text-blue-600">Customer Report</a>
       </div>
       <div>
