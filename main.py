@@ -478,19 +478,35 @@ def add_certificate():
         return redirect(url_for('login'))
 
     customer_id = request.form.get("customer_id")
-    cert_type = request.form.get("cert_type").strip()
+    cert_type = request.form.get("cert_type", "").strip()
     expiration_date = request.form.get("expiration_date")
+    activation_date = request.form.get("activation_date")
 
-    if not customer_id or not cert_type or not expiration_date:
+    if not customer_id or not cert_type or not expiration_date or not activation_date:
         flash("All fields are required to add a certificate.", "error")
         return redirect(url_for('dashboard'))
 
     try:
         exp_date = datetime.strptime(expiration_date, "%Y-%m-%d")
-        act_date = exp_date - relativedelta(years=1)
-        status = "Expired" if exp_date.date() < datetime.today().date() else "Active"
+        act_date = datetime.strptime(activation_date, "%Y-%m-%d")
+        today = datetime.today().date()
 
+        # Set status based on expiration
+        status = "Expired" if exp_date.date() < today else "Unverified"
+
+        # Prevent duplicates
         conn = get_db_connection()
+        duplicate = conn.execute("""
+            SELECT 1 FROM certificates
+            WHERE customer_id = ? AND cert_type = ?
+        """, (customer_id, cert_type)).fetchone()
+
+        if duplicate:
+            conn.close()
+            flash("This certificate already exists for the customer.", "error")
+            return redirect(url_for('dashboard'))
+
+        # Insert new certificate
         conn.execute("""
             INSERT INTO certificates (customer_id, cert_type, status, activation_date, expiration_date, verified)
             VALUES (?, ?, ?, ?, ?, 0)
@@ -505,10 +521,14 @@ def add_certificate():
         conn.close()
 
         flash("Certificate added successfully!", "success")
+
     except Exception as e:
         flash(f"Error adding certificate: {e}", "error")
 
     return redirect(url_for('dashboard'))
+
+
+
 @app.route('/verify/<int:cert_id>', methods=["POST"])
 def verify(cert_id):
     if 'user_id' not in session or session.get("role") != "admin":
@@ -517,14 +537,26 @@ def verify(cert_id):
 
     try:
         conn = get_db_connection()
-        conn.execute("UPDATE certificates SET verified = 1 WHERE id = ?", (cert_id,))
+        cert = conn.execute("SELECT expiration_date FROM certificates WHERE id = ?", (cert_id,)).fetchone()
+        if not cert:
+            flash("Certificate not found", "error")
+            return redirect(url_for('dashboard'))
+
+        exp_date = datetime.strptime(cert["expiration_date"], "%Y-%m-%d")
+        status = "Expired" if exp_date.date() < datetime.today().date() else "Active"
+
+        conn.execute("""
+            UPDATE certificates SET verified = 1, status = ? WHERE id = ?
+        """, (status, cert_id))
         conn.commit()
         conn.close()
+
         flash("Certificate verified successfully!", "success")
     except Exception as e:
         flash(f"Verification failed: {e}", "error")
 
     return redirect(url_for('dashboard'))
+
 @app.route('/delete-customer/<int:id>', methods=['POST'])
 def delete_customer(id):
     if 'user_id' not in session or session.get("role") != "admin":
