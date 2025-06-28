@@ -485,10 +485,13 @@ def add_certificate():
     if not customer_id or not cert_type or not expiration_date or not activation_date:
         flash("All fields are required to add a certificate.", "error")
         return redirect(url_for('dashboard'))
-
+    
     try:
         exp_date = datetime.strptime(expiration_date, "%Y-%m-%d")
         act_date = datetime.strptime(activation_date, "%Y-%m-%d")
+        if act_date > exp_date:
+            flash("Activation date cannot be later than Expiration date.", "error")
+            return redirect(url_for('dashboard'))
         today = datetime.today().date()
 
         # Set status based on expiration
