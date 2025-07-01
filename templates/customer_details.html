@@ -1,120 +1,237 @@
 {% extends "base.html" %}
 {% block title %}Customer Details – Agents SSO Master{% endblock %}
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 py-6">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Customer Details: {{ customer.name }}</h1>
-    <a href="{{ url_for('manage_customers') }}" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Back to Customers</a>
-  </div>
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-6 lg:p-8">
+  <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden">
+    <!-- Header Section -->
+    <div class="px-6 py-8 sm:px-8 bg-gradient-to-r from-blue-600 to-indigo-700 text-white flex justify-between items-center rounded-t-xl">
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Customer Details: {{ customer.name }}</h1>
+      <a href="{{ url_for('manage_customers') }}" class="px-5 py-2 bg-white text-blue-700 font-semibold rounded-lg shadow-md hover:bg-gray-100 transition duration-300 ease-in-out transform hover:scale-105">
+        ← Back to Customers
+      </a>
+    </div>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="space-y-2 mb-4">
-        {% for category, message in messages %}
-          <div class="p-3 rounded {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-800' }}">
-            {{ message }}
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="p-6 sm:p-8 space-y-4">
+          {% for category, message in messages %}
+            <div class="p-4 rounded-lg text-base font-medium 
+              {{ 'bg-green-100 text-green-800 border border-green-200' if category == 'success' else 'bg-red-100 text-red-800 border border-red-200' }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Customer Information Section -->
+    <div class="p-6 sm:p-8 border-b border-gray-200">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+        <svg class="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+        Customer Information
+      </h2>
+      <form id="customerDetailsForm" action="{{ url_for('update_customer', customer_id=customer.id) }}" method="POST">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Customer ID:</label>
+            <input type="text" name="code" value="{{ customer.code }}" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" readonly/>
           </div>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Name:</label>
+            <input type="text" name="name" value="{{ customer.name }}" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" readonly/>
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email:</label>
+            <input type="email" name="email" value="{{ customer.email or '' }}" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" readonly/>
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Phone:</label>
+            <input type="text" name="phone" value="{{ customer.phone or '' }}" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" readonly/>
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">PAN:</label>
+            <input type="text" name="pan" value="{{ customer.pan or '' }}" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" readonly/>
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">GST:</label>
+            <input type="text" name="gst" value="{{ customer.gst or '' }}" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" readonly/>
+          </div>
+          <div class="md:col-span-2 lg:col-span-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Address:</label>
+            <input type="text" name="address" value="{{ customer.address or '' }}" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" readonly/>
+          </div>
+          <div class="md:col-span-2 lg:col-span-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Current Status:</label>
+            {% if customer.status == 'Pending' %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 shadow-sm">Pending</span>
+            {% elif customer.status == 'Awaiting Approval' %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 shadow-sm">Awaiting Approval</span>
+            {% elif customer.status == 'SSO Setup Pending' %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-800 shadow-sm">SSO Setup Pending</span>
+            {% elif customer.status == 'Final Approval Pending' %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-800 shadow-sm">Final Approval Pending</span>
+            {% elif customer.status == 'Verified' %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800 shadow-sm">Verified</span>
+            {% elif customer.status == 'Rejected' %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800 shadow-sm">Rejected</span>
+            {% else %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-200 text-gray-800 shadow-sm">Unknown</span>
+            {% endif %}
+          </div>
+          {% if latest_report %}
+          <div class="md:col-span-2 lg:col-span-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Latest Report Status:</label>
+            <p class="text-gray-900 font-medium">{{ latest_report.status }} <span class="text-sm text-gray-500">(Generated: {{ latest_report.generated_date }})</span></p>
+            {% if latest_report.approver_notes %}
+              <p class="text-sm text-gray-600 mt-1 italic">Notes: "{{ latest_report.approver_notes }}"</p>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
 
-  <div class="bg-white shadow rounded-lg p-6 mb-6">
-    <h2 class="text-xl font-semibold mb-4">Customer Information</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div><strong>Customer ID:</strong> {{ customer.code }}</div>
-      <div><strong>Name:</strong> {{ customer.name }}</div>
-      <div><strong>Email:</strong> {{ customer.email or 'N/A' }}</div>
-      <div><strong>Phone:</strong> {{ customer.phone or 'N/A' }}</div>
-      <div><strong>PAN:</strong> {{ customer.pan or 'N/A' }}</div>
-      <div><strong>GST:</strong> {{ customer.gst or 'N/A' }}</div>
-      <div class="md:col-span-2"><strong>Address:</strong> {{ customer.address or 'N/A' }}</div>
-      <div class="md:col-span-2">
-        <strong>Current Status:</strong> 
-        {% if customer.status == 'Pending' %}
-          <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm font-semibold">{{ customer.status }}</span>
-        {% elif customer.status == 'Awaiting Approval' %}
-          <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-semibold">{{ customer.status }}</span>
-        {% elif customer.status == 'SSO Setup Pending' %}
-          <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm font-semibold">{{ customer.status }}</span>
-        {% elif customer.status == 'Final Approval Pending' %}
-          <span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-sm font-semibold">{{ customer.status }}</span>
-        {% elif customer.status == 'Verified' %}
-          <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-semibold">{{ customer.status }}</span>
-        {% elif customer.status == 'Rejected' %}
-          <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-semibold">{{ customer.status }}</span>
-        {% else %}
-          <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm">{{ customer.status }}</span>
+        <div class="mt-8 flex flex-wrap gap-4 justify-end" id="editButtons">
+          {% if session.role == 'admin' or session.role == 'approver' %}
+          <button type="button" onclick="toggleEditMode()" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105" id="modifyButton">
+            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+            Modify Details
+          </button>
+          {% endif %}
+          <button type="submit" class="px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105 hidden" id="saveButton">
+            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Save Changes
+          </button>
+          <button type="button" onclick="cancelEditMode()" class="px-6 py-3 bg-gray-500 text-white font-bold rounded-lg shadow-lg hover:bg-gray-600 transition duration-300 ease-in-out transform hover:scale-105 hidden" id="cancelButton">
+            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="p-6 sm:p-8 border-b border-gray-200">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+        <svg class="w-7 h-7 mr-3 text-red-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"></path></svg>
+        Administrative Actions
+      </h2>
+      <div class="flex flex-wrap gap-4">
+        {% if session.role == 'admin' %}
+          {% if customer.status == 'Pending' %} 
+            <form action="{{ url_for('generate_role_report', customer_id=customer.id) }}" method="POST">
+              <button type="submit" class="px-6 py-3 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700 transition duration-300 ease-in-out transform hover:scale-105">
+                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 2v-2m-6 4h6m2 1H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Generate Report
+              </button>
+            </form>
+          {% elif customer.status == 'SSO Setup Pending' %}
+            <form action="{{ url_for('mark_sso_complete', customer_id=customer.id) }}" method="POST">
+              <button type="submit" class="px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-lg hover:bg-orange-700 transition duration-300 ease-in-out transform hover:scale-105">
+                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                Mark SSO Setup Complete
+              </button>
+            </form>
+          {% endif %}
+          <form action="/delete-customer/{{ customer.id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this customer and ALL associated data? This action cannot be undone.')">
+            <button type="submit" class="px-6 py-3 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:bg-red-700 transition duration-300 ease-in-out transform hover:scale-105">
+              <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              Delete Customer
+            </button>
+          </form>
         {% endif %}
       </div>
-      {% if latest_report %}
-      <div class="md:col-span-2">
-        <strong>Latest Report Status:</strong> {{ latest_report.status }} (Generated: {{ latest_report.generated_date }})
-        {% if latest_report.approver_notes %}
-          <p class="text-sm text-gray-600 mt-1">Notes: {{ latest_report.approver_notes }}</p>
-        {% endif %}
-      </div>
+    </div>
+
+    <!-- Associated Certificates Section -->
+    <div class="p-6 sm:p-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+        <svg class="w-7 h-7 mr-3 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 4a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+        Associated Certificates
+      </h2>
+      {% if certificates %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {% for cert in certificates %}
+            <div class="bg-gray-50 rounded-lg shadow-md p-5 border border-gray-200 transition-all duration-300 ease-in-out hover:shadow-lg hover:border-blue-300">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">{{ cert.cert_type }}</h3>
+              <p class="text-sm text-gray-600 mb-1"><strong>Status:</strong>
+                {% if cert.status == 'Active' %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">Active</span>
+                {% elif cert.status == 'Expired' %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">Expired</span>
+                {% elif cert.status == 'Unverified' %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Unverified</span>
+                {% elif cert.status == 'Rejected' %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-300 text-gray-800">Rejected</span>
+                {% else %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-800">Unknown</span>
+                {% endif %}
+              </p>
+              <p class="text-sm text-gray-600 mb-1"><strong>Activation:</strong> {{ cert.activation_date }}</p>
+              <p class="text-sm text-gray-600 mb-3"><strong>Expiry:</strong> {{ cert.expiration_date }}</p>
+              <p class="text-sm font-medium">
+                <strong>Verified:</strong> 
+                {% if cert.verified %}
+                  <span class="text-green-700">Yes ✅</span>
+                {% else %}
+                  <span class="text-red-700">No ❌</span>
+                {% endif %}
+              </p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-gray-600 italic">No certificates associated with this customer.</p>
       {% endif %}
     </div>
-  </div>
 
-  <div class="bg-white shadow rounded-lg p-6 mb-6">
-    <h2 class="text-xl font-semibold mb-4">Actions</h2>
-    <div class="flex flex-wrap gap-3">
-      {% if session.role == 'admin' %}
-        {% if customer.status == 'Pending' %} 
-          <form action="{{ url_for('generate_role_report', customer_id=customer.id) }}" method="POST">
-            <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Generate Report</button>
-          </form>
-        {% elif customer.status == 'SSO Setup Pending' %} 
-          <form action="{{ url_for('mark_sso_complete', customer_id=customer.id) }}" method="POST">
-            <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">Mark SSO Setup Complete</button>
-          </form>
-        {% endif %}
-        <form action="/delete-customer/{{ customer.id }}" method="POST" onsubmit="return confirm('Delete this customer and all associated certificates and reports?')">
-          <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Delete Customer</button>
-        </form>
-      {% endif %}
-    </div>
   </div>
-
-  <div class="bg-white shadow rounded-lg p-6">
-    <h2 class="text-xl font-semibold mb-4">Associated Certificates</h2>
-    {% if certificates %}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {% for cert in certificates %}
-          <div class="bg-gray-50 shadow rounded-lg p-4 border">
-            <h3 class="text-lg font-semibold text-gray-700 mb-2">{{ cert.cert_type }}</h3>
-            <p><strong>Status:</strong>
-              {% if cert.status == 'Active' %}
-                <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-sm font-semibold">Active</span>
-              {% elif cert.status == 'Expired' %}
-                <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-sm font-semibold">Expired</span>
-              {% elif cert.status == 'Unverified' %}
-                <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm font-semibold">Unverified</span>
-              {% elif cert.status == 'Rejected' %}
-                <span class="bg-gray-300 text-gray-800 px-2 py-1 rounded text-sm font-semibold">Rejected</span>
-              {% else %}
-                <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm">Unknown</span>
-              {% endif %}
-            </p>
-            <p><strong>Activation:</strong> {{ cert.activation_date }}</p>
-            <p><strong>Expiry:</strong> {{ cert.expiration_date }}</p>
-            <p class="mt-2">
-              <strong>Verified:</strong> 
-              {% if cert.verified %}
-                <span class="text-green-700 font-medium">Yes ✅</span>
-              {% else %}
-                <span class="text-red-700 font-medium">No ❌</span>
-              {% endif %}
-            </p>
-          </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p class="text-gray-600">No certificates associated with this customer.</p>
-    {% endif %}
-  </div>
-
 </div>
+
+<script>
+  let originalValues = {}; // To store original values for cancel
+
+  function toggleEditMode() {
+    const form = document.getElementById('customerDetailsForm');
+    // Select all input fields that are part of the customer details form
+    const inputs = form.querySelectorAll('input[name="code"], input[name="name"], input[name="email"], input[name="phone"], input[name="pan"], input[name="gst"], input[name="address"]');
+    
+    const modifyButton = document.getElementById('modifyButton');
+    const saveButton = document.getElementById('saveButton');
+    const cancelButton = document.getElementById('cancelButton');
+
+    // Store current values before enabling edit
+    inputs.forEach(input => {
+      originalValues[input.name] = input.value;
+      input.readOnly = false;
+      input.classList.remove('border-gray-300'); // Remove default border
+      input.classList.add('bg-blue-50', 'border-blue-400', 'focus:ring-blue-500', 'focus:border-blue-500'); // Add styling for editable fields
+    });
+
+    modifyButton.classList.add('hidden');
+    saveButton.classList.remove('hidden');
+    cancelButton.classList.remove('hidden');
+  }
+
+  function cancelEditMode() {
+    const form = document.getElementById('customerDetailsForm');
+    // Select all input fields that are part of the customer details form
+    const inputs = form.querySelectorAll('input[name="code"], input[name="name"], input[name="email"], input[name="phone"], input[name="pan"], input[name="gst"], input[name="address"]');
+    
+    const modifyButton = document.getElementById('modifyButton');
+    const saveButton = document.getElementById('saveButton');
+    const cancelButton = document.getElementById('cancelButton');
+
+    // Revert to original values and disable edit
+    inputs.forEach(input => {
+      input.value = originalValues[input.name];
+      input.readOnly = true;
+      input.classList.remove('bg-blue-50', 'border-blue-400', 'focus:ring-blue-500', 'focus:border-blue-500'); // Remove styling
+      input.classList.add('border-gray-300'); // Add default border back
+    });
+
+    modifyButton.classList.remove('hidden');
+    saveButton.classList.add('hidden');
+    cancelButton.classList.add('hidden');
+  }
+</script>
 {% endblock %}
