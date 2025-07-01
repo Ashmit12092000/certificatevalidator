@@ -20,6 +20,19 @@ DATABASE = 'database.db'
 ADMIN_EMAIL = "admin@gmail.com"
 APPROVER_EMAIL = "approver@gmail.com" # New: Email for the Approver role
 
+# --- Custom Jinja2 Filters ---
+def from_json_filter(value):
+    """Custom Jinja2 filter to parse a JSON string."""
+    if value is None:
+        return [] # Return empty list for None values
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return [] # Return empty list on decoding error
+
+app.jinja_env.filters['from_json'] = from_json_filter
+
+
 # --- Database Setup ---
 def init_db():
     with sqlite3.connect(DATABASE) as conn:
@@ -340,6 +353,58 @@ def customer_details(customer_id):
                            certificates=certificates,
                            latest_report=latest_report,
                            role=session.get("role"))
+
+# New: Route to update customer details
+@app.route('/update-customer/<int:customer_id>', methods=["POST"])
+def update_customer(customer_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Only Admin and Approver can update customer details
+    if session.get("role") not in ["admin", "approver"]:
+        flash("Unauthorized to update customer details.", "error")
+        return redirect(url_for('customer_details', customer_id=customer_id))
+
+    conn = get_db_connection()
+    try:
+        customer = conn.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
+        if not customer:
+            flash("Customer not found.", "error")
+            return redirect(url_for('manage_customers'))
+
+        # Get data from form
+        name = request.form.get("name").strip()
+        email = request.form.get("email", "").strip()
+        phone = request.form.get("phone", "").strip()
+        pan = request.form.get("pan", "").strip()
+        gst = request.form.get("gst", "").strip()
+        address = request.form.get("address", "").strip()
+        code = request.form.get("code", "").strip().upper() # Customer ID can also be updated
+
+        if not code or not name:
+            flash("Customer ID and name are required.", "error")
+            return redirect(url_for('customer_details', customer_id=customer_id))
+
+        conn.execute("""
+            UPDATE customers SET 
+                code = ?, 
+                name = ?, 
+                address = ?, 
+                email = ?, 
+                phone = ?, 
+                pan = ?, 
+                gst = ?
+            WHERE id = ?
+        """, (code, name, address, email, phone, pan, gst, customer_id))
+        conn.commit()
+        flash("Customer details updated successfully!", "success")
+
+    except Exception as e:
+        print(f"Error updating customer {customer_id}: {e}")
+        flash(f"Error updating customer details: {e}", "error")
+    finally:
+        conn.close()
+    return redirect(url_for('customer_details', customer_id=customer_id))
 
 
 @app.route('/manage-certificates')
