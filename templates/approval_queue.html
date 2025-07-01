@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Approval Queue – Agents SSO Master{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+  <h1 class="text-2xl font-bold mb-4">Approval Queue</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="space-y-2 mb-4">
+        {% for category, message in messages %}
+          <div class="p-3 rounded {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-800' }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% if not reports %}
+    <p class="text-gray-600">No role reports awaiting approval or final confirmation.</p>
+  {% endif %}
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for report in reports %}
+    <div class="bg-white shadow rounded-lg p-6 border 
+      {% if report.status == 'Awaiting Approval' %} border-blue-200
+      {% elif report.status == 'Final Approval Pending' %} border-indigo-200
+      {% endif %}">
+      <h2 class="text-xl font-bold text-gray-800 mb-3">Report for: {{ report.customer_name }} ({{ report.customer_code }})</h2>
+      <p class="text-gray-600 mb-2">Generated: {{ report.generated_date }}</p>
+      <p class="text-gray-600 mb-4">Status: 
+        {% if report.status == 'Awaiting Approval' %}
+          <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-semibold">{{ report.status }}</span>
+        {% elif report.status == 'Final Approval Pending' %}
+          <span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-sm font-semibold">{{ report.status }}</span>
+        {% endif %}
+      </p>
+
+      {% if report.status == 'Awaiting Approval' %}
+        <h3 class="text-lg font-semibold mb-2">Certificates for Initial Approval:</h3>
+        <form action="{{ url_for('approve_reject_report', report_id=report.id) }}" method="POST">
+          {% if report.certificates_for_approval %}
+            <ul class="space-y-2 mb-4">
+              {% for cert in report.certificates_for_approval %}
+              <li class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <div>
+                  <p class="font-medium">{{ cert.cert_type }}</p>
+                  <p class="text-sm text-gray-500">
+                    {{ cert.activation_date }} to {{ cert.expiration_date }} ({{ cert.status }})
+                  </p>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <label class="inline-flex items-center">
+                    <input type="checkbox" name="approve_cert_type" value="{{ cert.cert_type }}" class="form-checkbox text-green-600 h-5 w-5">
+                    <span class="ml-2 text-gray-700">Approve</span>
+                  </label>
+                  <label class="inline-flex items-center">
+                    <input type="checkbox" name="reject_cert_type" value="{{ cert.cert_type }}" class="form-checkbox text-red-600 h-5 w-5">
+                    <span class="ml-2 text-gray-700">Reject</span>
+                  </label>
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-gray-500">No certificates found for initial approval in this report.</p>
+          {% endif %}
+
+          <div class="mb-4">
+            <label for="approver_notes_{{ report.id }}" class="block text-sm font-medium text-gray-700">Approver Notes (Optional):</label>
+            <textarea id="approver_notes_{{ report.id }}" name="approver_notes" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"></textarea>
+          </div>
+
+          <div class="flex justify-end space-x-2">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Submit Initial Approval</button>
+          </div>
+        </form>
+      {% elif report.status == 'Final Approval Pending' %}
+        <h3 class="text-lg font-semibold mb-2">Final SSO Confirmation:</h3>
+        <p class="text-gray-600 mb-4">The Admin has completed the SSO setup for this customer.</p>
+        <p class="text-gray-600 mb-4">Please review and provide final confirmation.</p>
+
+        <form action="{{ url_for('final_confirm_sso', report_id=report.id) }}" method="POST">
+          <div class="mb-4">
+            <label for="final_approver_notes_{{ report.id }}" class="block text-sm font-medium text-gray-700">Final Notes (Optional):</label>
+            <textarea id="final_approver_notes_{{ report.id }}" name="final_approver_notes" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"></textarea>
+          </div>
+          <div class="flex justify-end space-x-2">
+            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Final Confirm SSO</button>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
