@@ -9,18 +9,23 @@
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
     <div class="flex gap-2">
-      {% if role == 'admin' %}
+      {% if role == 'admin' or role == 'deo' %} {# DEO can also add customer #}
         <button onclick="document.getElementById('addCustomerModal').classList.remove('hidden')"
               class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Customer</button>
       {% endif %}
      
-      <button onclick="document.getElementById('addCertModal').classList.remove('hidden')"
-              class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Certificate</button>
-      <form action="/import-csv" method="POST" enctype="multipart/form-data" class="inline">
-        <input type="file" name="csv_file" required class="hidden" id="csvFileInput" onchange="this.form.submit()" />
-        <button type="button" onclick="document.getElementById('csvFileInput').click()"
-                class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Import from CSV</button>
-      </form>
+      {% if role == 'admin'or role=='approver' %} {# Only Admin can add certificate #}
+        <button onclick="document.getElementById('addCertModal').classList.remove('hidden')"
+                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Certificate</button>
+      {% endif %}
+
+      {% if role == 'admin' or role == 'deo' %} {# DEO can also import CSV #}
+        <form action="/import-csv" method="POST" enctype="multipart/form-data" class="inline">
+          <input type="file" name="csv_file" required class="hidden" id="csvFileInput" onchange="this.form.submit()" />
+          <button type="button" onclick="document.getElementById('csvFileInput').click()"
+                  class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Import from CSV</button>
+        </form>
+      {% endif %}
     </div>
   </div>
 
@@ -44,26 +49,24 @@
         <h2 class="text-lg font-semibold text-gray-700 mb-2">{{ cert.customer_name }}</h2>
         <p><strong>Type:</strong> {{ cert.cert_type }}</p>
         <p><strong>Status:</strong>
-          <td>
-            {% if cert.status == 'Active' %}
-              <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-sm font-semibold">Active</span>
-            {% elif cert.status == 'Expired' %}
-              <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-sm font-semibold">Expired</span>
-            {% elif cert.status == 'Unverified' %}
-              <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm font-semibold">Unverified</span>
-            {% else %}
-              <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm">Unknown</span>
-            {% endif %}
-          </td>
+          {% if cert.status == 'Active' %}
+            <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-sm font-semibold">Active</span>
+          {% elif cert.status == 'Expired' %}
+            <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-sm font-semibold">Expired</span>
+          {% elif cert.status == 'Unverified' %}
+            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm font-semibold">Unverified</span>
+          {% elif cert.status == 'Rejected' %} {# New: Rejected status #}
+            <span class="bg-gray-300 text-gray-800 px-2 py-1 rounded text-sm font-semibold">Rejected</span>
+          {% else %}
+            <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm">Unknown</span>
+          {% endif %}
         </p>
         <p><strong>Activation:</strong> {{ cert.activation_date }}</p>
         <p><strong>Expiry:</strong> {{ cert.expiration_date }}</p>
 
-        {% if role == "admin" and not cert.verified %}
-          <form action="/verify/{{ cert.id }}" method="POST" class="mt-3">
-            <button class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">Verify</button>
-          </form>
-        {% elif cert.verified %}
+        {% if not cert.verified %}
+          <p class="mt-2 text-yellow-700 font-medium">Pending Approval</p> {# Updated text #}
+        {% else %}
           <p class="mt-2 text-green-700 font-medium">Verified ✅</p>
         {% endif %}
       </div>
