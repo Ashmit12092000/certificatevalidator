@@ -5,33 +5,39 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{% block title %}Agents SSO Master{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      @apply text-gray-800; /* Default text color */
+    }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
+<body class="bg-gray-50 min-h-screen flex flex-col">
 
   <!-- Navbar -->
   {% if request.endpoint not in ['login', 'signup'] %}
-  <nav class="bg-white shadow">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+  <nav class="bg-white shadow-lg py-4 px-6">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-4">
         <img src="{{ url_for('static', filename='logo.png') }}" alt="Kakinada Seaports Limited" class="h-10"/>
-        <span class="text-xl font-bold">Agents SSO Master</span>
+        <span class="text-2xl font-extrabold text-blue-700 tracking-tight">Agents SSO Master</span>
       </div>
-      <div class="flex space-x-4">
-        <a href="{{ url_for('dashboard') }}" class="hover:text-blue-600">Dashboard</a>
-        
-        <a href="{{ url_for('manage_customers') }}" class="hover:text-blue-600">Manage Customers</a>
+      <div class="flex items-center space-x-6">
+        <a href="{{ url_for('dashboard') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-200">Dashboard</a>
+        <a href="{{ url_for('manage_customers') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-200">Manage Customers</a>
         {% if session.get('role') == 'admin' %}
-          <a href="{{ url_for('manage_certificates') }}" class="hover:underline">Manage Certificate Types</a>
+          <a href="{{ url_for('manage_certificates') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-200">Manage Certificate Types</a>
         {% endif %}
-        {% if session.get('role') == 'approver' %} {# New: Approver link #}
-          <a href="{{ url_for('approval_queue') }}" class="hover:text-blue-600">Approval Queue</a>
+        {% if session.get('role') == 'approver' %}
+          <a href="{{ url_for('approval_queue') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-200">Approval Queue</a>
         {% endif %}
-        <a href="{{ url_for('report') }}" class="hover:text-blue-600">Customer Report</a>
+        <a href="{{ url_for('report') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-200">Customer Report</a>
       </div>
-      <div>
+      <div class="flex items-center space-x-4">
         {% if session.user_email %}
-          <span class="mr-4">{{ session.user_email }}</span>
-          <a href="{{ url_for('logout') }}" class="text-red-600 hover:underline">Logout</a>
+          <span class="text-gray-700 font-semibold">{{ session.user_email }}</span>
+          <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transition duration-200">Logout</a>
         {% endif %}
       </div>
     </div>
@@ -39,12 +45,12 @@
   {% endif %}
 
   <!-- Page content -->
-  <main class="flex-grow">
+  <main class="flex-grow py-8">
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="bg-white shadow-inner py-4 text-center text-gray-600">
-    &copy; {{ current_year }} Kakinada Seaports Limited
+  <footer class="bg-gray-800 text-white py-4 text-center text-sm shadow-inner">
+    &copy; 2025 Kakinada Seaports Limited. All rights reserved.
   </footer>
 </body>
 </html>
