@@ -21,7 +21,10 @@
         
         <a href="{{ url_for('manage_customers') }}" class="hover:text-blue-600">Manage Customers</a>
         {% if session.get('role') == 'admin' %}
-          <a href="{{ url_for('manage_certificates') }}" class="hover:underline">Manage Certificates</a>
+          <a href="{{ url_for('manage_certificates') }}" class="hover:underline">Manage Certificate Types</a>
+        {% endif %}
+        {% if session.get('role') == 'approver' %} {# New: Approver link #}
+          <a href="{{ url_for('approval_queue') }}" class="hover:text-blue-600">Approval Queue</a>
         {% endif %}
         <a href="{{ url_for('report') }}" class="hover:text-blue-600">Customer Report</a>
       </div>
