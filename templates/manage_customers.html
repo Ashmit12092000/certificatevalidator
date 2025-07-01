@@ -1,51 +1,58 @@
 {% extends "base.html" %}
 {% block title %}Manage Customers – Agents SSO Master{% endblock %}
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 py-6">
-  <h1 class="text-2xl font-bold mb-4">Manage Customers</h1>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+    <h1 class="text-3xl font-extrabold text-gray-900 mb-6">Manage Customers</h1>
 
-  <div class="mb-4">
-    <input type="text" id="filterName" placeholder="Customer Name" class="border p-2 rounded mr-2"/>
-    <input type="text" id="filterEmail" placeholder="Email" class="border p-2 rounded mr-2"/>
-    <input type="text" id="filterGST" placeholder="GST" class="border p-2 rounded mr-2"/>
-    <button onclick="applyFilters()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Filter</button>
+    <div class="flex flex-col sm:flex-row flex-wrap gap-4 mb-6">
+      <input type="text" id="filterName" placeholder="Filter by Customer Name" class="flex-grow px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150"/>
+      <input type="text" id="filterEmail" placeholder="Filter by Email" class="flex-grow px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150"/>
+      <input type="text" id="filterGST" placeholder="Filter by GST" class="flex-grow px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150"/>
+      <button onclick="applyFilters()" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-200 ease-in-out transform hover:scale-105">
+        <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+        Apply Filters
+      </button>
+    </div>
   </div>
 
-  <table class="min-w-full bg-white rounded shadow">
-    <thead class="bg-gray-200">
-      <tr>
-        <th class="p-3 text-left">Customer ID</th>
-        <th class="p-3 text-left">Name</th>
-        <th class="p-3 text-left">Status</th> 
-      </tr>
-    </thead>
-    <tbody id="customerTable">
-      {% for cust in customers %}
-      <tr class="border-t cursor-pointer hover:bg-gray-50" data-href="{{ url_for('customer_details', customer_id=cust.id) }}">
-       
-        <td class="p-3">{{ cust.code }}</td>
-        <td class="p-3">{{ cust.name }}</td>
-        <td class="p-3">
-          {% if cust.status == 'Pending' %}
-            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm font-semibold">{{ cust.status }}</span>
-          {% elif cust.status == 'Awaiting Approval' %}
-            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-semibold">{{ cust.status }}</span>
-          {% elif cust.status == 'SSO Setup Pending' %} 
-            <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm font-semibold">{{ cust.status }}</span>
-          {% elif cust.status == 'Final Approval Pending' %} 
-            <span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-sm font-semibold">{{ cust.status }}</span>
-          {% elif cust.status == 'Verified' %}
-            <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-semibold">{{ cust.status }}</span>
-          {% elif cust.status == 'Rejected' %}
-            <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-semibold">{{ cust.status }}</span>
-          {% else %}
-            <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm">{{ cust.status }}</span>
-          {% endif %}
-        </td> 
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="bg-white rounded-xl shadow-md overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer ID</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th> 
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for cust in customers %}
+        <tr class="hover:bg-gray-50 cursor-pointer transition duration-150 ease-in-out"  data-href="{{ url_for('customer_details', customer_id=cust.id)}}" >
+         
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ cust.code }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><strong>{{ cust.name }}</strong></td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm">
+            {% if cust.status == 'Pending' %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 shadow-sm">Pending</span>
+            {% elif cust.status == 'Awaiting Approval' %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 shadow-sm">Awaiting Approval</span>
+            {% elif cust.status == 'SSO Setup Pending' %} 
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 shadow-sm">SSO Setup Pending</span>
+            {% elif cust.status == 'Final Approval Pending' %} 
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 shadow-sm">Final Approval Pending</span>
+            {% elif cust.status == 'Verified' %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 shadow-sm">Verified</span>
+            {% elif cust.status == 'Rejected' %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 shadow-sm">Rejected</span>
+            {% else %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-800 shadow-sm">Unknown</span>
+            {% endif %}
+          </td> 
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
@@ -56,18 +63,16 @@
     });
 function applyFilters(){
   let name = document.getElementById('filterName').value.toLowerCase();
-  let email = document.getElementById('filterEmail').value.toLowerCase(); // Note: Email and GST are not displayed in this table view, but filter logic remains.
+  let email = document.getElementById('filterEmail').value.toLowerCase(); 
   let gst  = document.getElementById('filterGST').value.toLowerCase();
   document.querySelectorAll('#customerTable tr').forEach(r => {
     let cols = r.querySelectorAll('td');
     let show = true;
-    // Adjust column indices based on visible columns (Customer ID, Name, Status)
+    // Filter logic adjusted for visible columns (Customer ID, Name, Status)
     if(name && !cols[1].textContent.toLowerCase().includes(name)) show = false;
-    // If you want to filter by email/GST, you'd need to fetch these values from a data attribute or keep them hidden in the row
-    // For now, these filters won't work correctly with only Name/Status visible unless you adapt the JS.
-    // Keeping the filter inputs for now, but be aware of their limited functionality with current table display.
-    // if(email && !cols[?].textContent.toLowerCase().includes(email)) show = false; // Need correct column index or data attribute
-    // if(gst && !cols[?].textContent.toLowerCase().includes(gst)) show = false;   // Need correct column index or data attribute
+    // Note: Email and GST filters will only work if these columns are present in the table or
+    // if you add data attributes to the rows containing this info for JS to read.
+    // For now, these filters will not affect the display as the columns are hidden.
     r.style.display = show ? '' : 'none';
   });
 }
