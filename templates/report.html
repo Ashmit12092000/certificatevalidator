@@ -11,6 +11,7 @@
       <option>Active</option>
       <option>Expired</option>
       <option>Unverified</option>
+      <option>Rejected</option> {# Include Rejected status for filtering #}
     </select>
     <select id="fType" class="border p-2 rounded">
       <option value="">All Types</option>
@@ -39,7 +40,11 @@
       {% for row in report %}
       <tr class="border-t">
         <td class="p-3">{{ row.customer_code }}</td>
-        <td class="p-3">{{ row.customer_name }}</td>
+        <td class="p-3">
+          <a href="{{ url_for('customer_details', customer_id=row.customer_id) }}" class="text-blue-600 hover:underline">
+            {{ row.customer_name }}
+          </a>
+        </td>
         <td class="p-3">{{ row.cert_type }}</td>
         <td class="p-3">{{ row.status }}</td>
         <td class="p-3">{{ row.activation_date }}</td>
