@@ -32,6 +32,24 @@
         <input type="date" name="expiration_date" id="expiration_date" required 
                class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition duration-150"/>
       </div>
+
+      {# Software and Modules Selection #}
+      <div>
+        <label for="software_select" class="block text-sm font-medium text-gray-700 mb-1">Select Software</label>
+        <select name="software_select" id="software_select" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+          <option value="">-- Select Software to assign modules --</option>
+          {# Loop to populate software options directly from passed data #}
+          {% for app in all_software_apps %}
+            <option value="{{ app.id }}">{{ app.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div id="modules_checkboxes" class="space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+        <p class="text-sm text-gray-500">Select a software to see modules.</p>
+      </div>
+
       <div class="flex justify-end space-x-3">
         <button type="button" onclick="document.getElementById('addCertModal').classList.add('hidden')"
                 class="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition duration-200">
@@ -45,3 +63,72 @@
     </form>
   </div>
 </div>
+
+<script>
+// This script runs when the modal HTML is included.
+// It relies on global variables allSoftwareAppsData and allSoftwareModulesData
+// being populated by the parent dashboard.html script.
+
+document.addEventListener('DOMContentLoaded', function() {
+const softwareSelect = document.getElementById('software_select');
+const modulesCheckboxesDiv = document.getElementById('modules_checkboxes');
+const addCertModal = document.getElementById('addCertModal');
+
+// Function to populate modules based on selected software
+function populateModules() {
+  const selectedSoftwareId = softwareSelect.value;
+  modulesCheckboxesDiv.innerHTML = ''; // Clear previous modules
+
+  // Ensure allSoftwareModulesData is defined and not empty
+  if (!window.allSoftwareModulesData || window.allSoftwareModulesData.length === 0) {
+    modulesCheckboxesDiv.innerHTML = '<p class="text-sm text-gray-500">No modules configured yet. Please add software and modules in the admin panel.</p>';
+    return;
+  }
+
+  if (selectedSoftwareId) {
+    const relevantModules = window.allSoftwareModulesData.filter(module => 
+      module.software_id == selectedSoftwareId
+    );
+
+    if (relevantModules.length > 0) {
+      relevantModules.forEach(module => {
+        const checkboxDiv = document.createElement('div');
+        checkboxDiv.className = 'flex items-center';
+        checkboxDiv.innerHTML = `
+          <input type="checkbox" name="selected_modules" value="${module.id}" id="module_${module.id}"
+                 class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+          <label for="module_${module.id}" class="ml-2 block text-sm text-gray-700">${module.name}</label>
+        `;
+        modulesCheckboxesDiv.appendChild(checkboxDiv);
+      });
+    } else {
+      modulesCheckboxesDiv.innerHTML = '<p class="text-sm text-gray-500">No modules available for this software.</p>';
+    }
+  } else {
+    modulesCheckboxesDiv.innerHTML = '<p class="text-sm text-gray-500">Select a software to see modules.</p>';
+  }
+}
+
+// Attach event listener to software select dropdown
+if (softwareSelect) {
+  softwareSelect.addEventListener('change', populateModules);
+}
+
+// Listen for when the addCertModal is opened to populate modules initially
+if (addCertModal) {
+  const observer = new MutationObserver((mutationsList, observer) => {
+    for (const mutation of mutationsList) {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        if (!addCertModal.classList.contains('hidden')) {
+          // Modal is now visible, populate modules (if a software is pre-selected or default)
+          populateModules();
+          // Disconnect observer after first successful populate to prevent re-triggering
+          observer.disconnect(); 
+        }
+      }
+    }
+  });
+  observer.observe(addCertModal, { attributes: true });
+}
+});
+</script>
