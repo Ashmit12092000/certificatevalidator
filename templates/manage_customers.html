@@ -27,7 +27,7 @@
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
         {% for cust in customers %}
-        <tr class="hover:bg-gray-50 cursor-pointer transition duration-150 ease-in-out"  data-href="{{ url_for('customer_details', customer_id=cust.id)}}" >
+        <tr class="hover:bg-gray-50 cursor-pointer transition duration-150 ease-in-out" data-href="{{ url_for('customer_details', customer_id=cust.id) }}">
          
           <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ cust.code }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><strong>{{ cust.name }}</strong></td>
@@ -68,11 +68,7 @@ function applyFilters(){
   document.querySelectorAll('#customerTable tr').forEach(r => {
     let cols = r.querySelectorAll('td');
     let show = true;
-    // Filter logic adjusted for visible columns (Customer ID, Name, Status)
     if(name && !cols[1].textContent.toLowerCase().includes(name)) show = false;
-    // Note: Email and GST filters will only work if these columns are present in the table or
-    // if you add data attributes to the rows containing this info for JS to read.
-    // For now, these filters will not affect the display as the columns are hidden.
     r.style.display = show ? '' : 'none';
   });
 }
