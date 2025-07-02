@@ -79,7 +79,7 @@
               <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-200 text-gray-800 shadow-sm">Unknown</span>
             {% endif %}
           </div>
-          {% if latest_report %}
+          {% if latest_report %} {# Explicitly check if latest_report exists #}
           <div class="md:col-span-2 lg:col-span-3">
             <label class="block text-sm font-medium text-gray-700 mb-1">Latest Report Status:</label>
             <p class="text-gray-900 font-medium">{{ latest_report.status }} <span class="text-sm text-gray-500">(Generated: {{ latest_report.generated_date }})</span></p>
@@ -91,8 +91,9 @@
         </div>
 
         <div class="mt-8 flex flex-wrap gap-4 justify-end" id="editButtons">
-          {% if session.role == 'admin' or session.role == 'approver' %}
-          <button type="button" onclick="toggleEditMode()" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105" id="modifyButton">
+          {# Modify Details button visible to Supervisor and Admin (HOD) #}
+          {% if session.role == 'supervisor' or session.role == 'admin_hod' %}
+          <button type="button" id="modifyButton" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105">
             <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
             Modify Details
           </button>
@@ -101,7 +102,7 @@
             <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             Save Changes
           </button>
-          <button type="button" onclick="cancelEditMode()" class="px-6 py-3 bg-gray-500 text-white font-bold rounded-lg shadow-lg hover:bg-gray-600 transition duration-300 ease-in-out transform hover:scale-105 hidden" id="cancelButton">
+          <button type="button" id="cancelButton" class="px-6 py-3 bg-gray-500 text-white font-bold rounded-lg shadow-lg hover:bg-gray-600 transition duration-300 ease-in-out transform hover:scale-105 hidden">
             <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             Cancel
           </button>
@@ -116,7 +117,7 @@
         Administrative Actions
       </h2>
       <div class="flex flex-wrap gap-4">
-        {% if session.role == 'admin' %}
+        {% if session.role == 'supervisor' or session.role == 'admin_hod' %} {# Supervisor and Admin (HOD) can generate report and delete customer #}
           {% if customer.status == 'Pending' %} 
             <form action="{{ url_for('generate_role_report', customer_id=customer.id) }}" method="POST">
               <button type="submit" class="px-6 py-3 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700 transition duration-300 ease-in-out transform hover:scale-105">
@@ -176,6 +177,22 @@
                   <span class="text-red-700">No ❌</span>
                 {% endif %}
               </p>
+              {% if cert.granted_software_modules %}
+                <h4 class="text-sm font-semibold text-gray-700 mt-3 mb-1">Granted Software/Modules:</h4>
+                <ul class="list-disc list-inside text-xs text-gray-600 space-y-0.5">
+                    {% for item in cert.granted_software_modules | from_json %}
+                        <li>{{ item.software_name }} - {{ item.module_name }}</li>
+                    {% endfor %}
+                </ul>
+              {% endif %}
+              {# New: Modify Dates Button for Supervisor and Admin (HOD) #}
+              {% if session.role == 'supervisor' or session.role == 'admin_hod' %}
+                <button onclick="openEditCertDatesModal('{{ cert.id }}', '{{ cert.activation_date }}', '{{ cert.expiration_date }}')"
+                        class="mt-4 flex items-center px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600 transition duration-200 ease-in-out transform hover:scale-105 text-sm">
+                  <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                  Modify Dates
+                </button>
+              {% endif %}
             </div>
           {% endfor %}
         </div>
@@ -187,14 +204,43 @@
   </div>
 </div>
 
+<!-- Modals -->
+{% include 'modals/add_customer_modal.html' %}
+{% include 'modals/add_certificate_modal.html' %}
+{% include 'modals/edit_certificate_dates_modal.html' %}
+
+{# Hidden div to store certificates data as a JSON string #}
+<div id="certificates-data" data-certificates="{{ certificates_json | safe }}" style="display: none;"></div>
+
 <script>
+  // Declare variables globally
   let originalValues = {}; // To store original values for cancel
 
+  // Function to open the Edit Certificate Dates Modal (Global scope)
+  function openEditCertDatesModal(certId, activationDate, expirationDate) {
+    console.log('openEditCertDatesModal called for certId:', certId, 'Activation:', activationDate, 'Expiration:', expirationDate);
+    const modal = document.getElementById('editCertDatesModal');
+    const form = document.getElementById('editCertDatesForm');
+    const certIdInput = document.getElementById('editCertId');
+    const activationDateInput = document.getElementById('editActivationDate');
+    const expirationDateInput = document.getElementById('editExpirationDate');
+
+    form.action = `/update-certificate-dates/${certId}`;
+    certIdInput.value = certId;
+    activationDateInput.value = activationDate;
+    expirationDateInput.value = expirationDate;
+    modal.classList.remove('hidden');
+  }
+
+  // Function to close the Edit Certificate Dates Modal (Global scope)
+  function closeEditCertDatesModal() {
+    document.getElementById('editCertDatesModal').classList.add('hidden');
+  }
+
+  // Function to toggle edit mode for customer details (Global scope)
   function toggleEditMode() {
     const form = document.getElementById('customerDetailsForm');
-    // Select all input fields that are part of the customer details form
-    const inputs = form.querySelectorAll('input[name="code"], input[name="name"], input[name="email"], input[name="phone"], input[name="pan"], input[name="gst"], input[name="address"]');
-    
+    const inputs = form.querySelectorAll('input[type="text"], input[type="email"]');
     const modifyButton = document.getElementById('modifyButton');
     const saveButton = document.getElementById('saveButton');
     const cancelButton = document.getElementById('cancelButton');
@@ -212,11 +258,10 @@
     cancelButton.classList.remove('hidden');
   }
 
+  // Function to cancel edit mode for customer details (Global scope)
   function cancelEditMode() {
     const form = document.getElementById('customerDetailsForm');
-    // Select all input fields that are part of the customer details form
-    const inputs = form.querySelectorAll('input[name="code"], input[name="name"], input[name="email"], input[name="phone"], input[name="pan"], input[name="gst"], input[name="address"]');
-    
+    const inputs = form.querySelectorAll('input[type="text"], input[type="email"]');
     const modifyButton = document.getElementById('modifyButton');
     const saveButton = document.getElementById('saveButton');
     const cancelButton = document.getElementById('cancelButton');
@@ -233,5 +278,83 @@
     saveButton.classList.add('hidden');
     cancelButton.classList.add('hidden');
   }
+
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Get button elements for customer details modification
+    const modifyButton = document.getElementById('modifyButton');
+    const saveButton = document.getElementById('saveButton');
+    const cancelButton = document.getElementById('cancelButton');
+
+    // Attach event listeners for customer details modification buttons
+    if (modifyButton) {
+      modifyButton.addEventListener('click', toggleEditMode);
+    }
+    if (saveButton) {
+      // No direct event listener needed here, as it's a submit button for the form
+    }
+    if (cancelButton) {
+      cancelButton.addEventListener('click', cancelEditMode);
+    }
+
+    // Existing code for software/modules and certificates data (kept as is)
+    const allSoftwareAppsData = JSON.parse('{{ all_software_apps | tojson | safe }}' || '[]');
+    const allSoftwareModulesData = JSON.parse('{{ all_software_modules_json | safe }}' || '[]');
+    const certificatesData = JSON.parse(document.getElementById('certificates-data').dataset.certificates || '[]');
+
+    const softwareSelect = document.getElementById('software_select');
+    const modulesCheckboxesDiv = document.getElementById('modules_checkboxes');
+    const addCertModal = document.getElementById('addCertModal');
+
+    // Function to populate modules based on selected software
+    function populateModules() {
+      const selectedSoftwareId = softwareSelect.value;
+      modulesCheckboxesDiv.innerHTML = ''; // Clear previous modules
+
+      if (selectedSoftwareId) {
+        const relevantModules = allSoftwareModulesData.filter(module => 
+          module.software_id == selectedSoftwareId
+        );
+
+        if (relevantModules.length > 0) {
+          relevantModules.forEach(module => {
+            const checkboxDiv = document.createElement('div');
+            checkboxDiv.className = 'flex items-center';
+            checkboxDiv.innerHTML = `
+              <input type="checkbox" name="selected_modules" value="${module.id}" id="module_${module.id}"
+                     class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+              <label for="module_${module.id}" class="ml-2 block text-sm text-gray-700">${module.name}</label>
+            `;
+            modulesCheckboxesDiv.appendChild(checkboxDiv);
+          });
+        } else {
+          modulesCheckboxesDiv.innerHTML = '<p class="text-sm text-gray-500">No modules available for this software.</p>';
+        }
+      } else {
+        modulesCheckboxesDiv.innerHTML = '<p class="text-sm text-gray-500">Select a software to see modules.</p>';
+      }
+    }
+
+    // Attach event listener to software select dropdown
+    if (softwareSelect) {
+      softwareSelect.addEventListener('change', populateModules);
+    }
+
+    // Listen for when the addCertModal is opened to populate modules initially
+    if (addCertModal) {
+      const observer = new MutationObserver((mutationsList, observer) => {
+        for (const mutation of mutationsList) {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            if (!addCertModal.classList.contains('hidden')) {
+              populateModules();
+              // Disconnect observer after first successful populate to prevent re-triggering
+              observer.disconnect(); 
+            }
+          }
+        }
+      });
+      observer.observe(addCertModal, { attributes: true });
+    }
+  });
 </script>
 {% endblock %}
