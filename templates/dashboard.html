@@ -9,7 +9,8 @@
   <div class="flex flex-col sm:flex-row justify-between items-center mb-8 bg-white p-6 rounded-xl shadow-md">
     <h1 class="text-3xl font-extrabold text-gray-900 mb-4 sm:mb-0">Overview Dashboard</h1>
     <div class="flex flex-wrap justify-center sm:justify-end gap-3">
-      {% if role == 'admin' or role == 'deo' %}
+      {# Add Customer button visible to Operator and Admin (HOD) #}
+      {% if role == 'operator' or role == 'admin_hod' %}
         <button onclick="document.getElementById('addCustomerModal').classList.remove('hidden')"
               class="flex items-center px-5 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-200 ease-in-out transform hover:scale-105">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
@@ -17,15 +18,18 @@
         </button>
       {% endif %}
      
-      {% if role == 'admin' %}
+      {# Add Certificate button visible to Supervisor and Admin (HOD) #}
+      {% if role == 'supervisor' or role == 'admin_hod' %}
         <button onclick="document.getElementById('addCertModal').classList.remove('hidden')"
+                id="addCertButton"
                 class="flex items-center px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-200 ease-in-out transform hover:scale-105">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
           Add Certificate
         </button>
       {% endif %}
 
-      {% if role == 'admin' or role == 'deo' %}
+      {# Import from CSV button visible to Operator, Supervisor and Admin (HOD) #}
+      {% if role == 'operator' or role == 'supervisor' or role == 'admin_hod' %}
         <form action="/import-csv" method="POST" enctype="multipart/form-data" class="inline-flex">
           <input type="file" name="csv_file" required class="hidden" id="csvFileInput" onchange="this.form.submit()" />
           <button type="button" onclick="document.getElementById('csvFileInput').click()"
@@ -38,7 +42,6 @@
     </div>
   </div>
 
-  <!-- Flash Messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <div class="space-y-4 mb-8">
@@ -52,7 +55,6 @@
     {% endif %}
   {% endwith %}
       
-  <!-- Certificates Grid -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     {% for cert in certificates %}
       <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200 transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02]">
@@ -85,6 +87,25 @@
             Verified
           </p>
         {% endif %}
+
+        {# New: Display Granted Software/Modules #}
+        {% if cert.granted_software_modules %}
+          <h4 class="text-sm font-semibold text-gray-700 mt-3 mb-1">Granted Software/Modules:</h4>
+          <ul class="list-disc list-inside text-xs text-gray-600 space-y-0.5">
+              {% for item in cert.granted_software_modules | from_json %}
+                  <li>{{ item.software_name }} - {{ item.module_name }}</li>
+              {% endfor %}
+          </ul>
+        {% endif %}
+
+        {# New: Modify Dates Button for Admin (HOD) #}
+        {% if role == 'supervisor' or role == 'admin_hod' %}
+          <button onclick="openEditCertDatesModal('{{ cert.id }}', '{{ cert.activation_date }}', '{{ cert.expiration_date }}')"
+                  class="mt-4 flex items-center px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600 transition duration-200 ease-in-out transform hover:scale-105 text-sm">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            Modify Dates
+          </button>
+        {% endif %}
       </div>
     {% endfor %}
   </div>
@@ -92,6 +113,124 @@
 
 <!-- Modals -->
 {% include 'modals/add_customer_modal.html' %}
-{% include 'modals/add_certificate_modal.html' %}
+{% include 'modals/add_certificate_modal.html' %} {# Removed 'with' clause #}
+{% include 'modals/edit_certificate_dates_modal.html' %}
 
+{# Hidden div to store certificates data as a JSON string #}
+<div id="certificates-data" data-certificates="{{ certificates_json | safe }}" style="display: none;"></div>
+
+<script>
+  // Declare variables globally
+  let allSoftwareAppsData;
+  let allSoftwareModulesData;
+  let certificatesData; 
+
+  // Function to open the Edit Certificate Dates Modal (Global scope)
+  function openEditCertDatesModal(certId, activationDate, expirationDate) {
+    console.log('openEditCertDatesModal called for certId:', certId, 'Activation:', activationDate, 'Expiration:', expirationDate);
+    const modal = document.getElementById('editCertDatesModal');
+    const form = document.getElementById('editCertDatesForm');
+    const certIdInput = document.getElementById('editCertId');
+    const activationDateInput = document.getElementById('editActivationDate');
+    const expirationDateInput = document.getElementById('editExpirationDate');
+
+    form.action = `/update-certificate-dates/${certId}`;
+    certIdInput.value = certId;
+    activationDateInput.value = activationDate;
+    expirationDateInput.value = expirationDate;
+    modal.classList.remove('hidden');
+  }
+
+  // Function to close the Edit Certificate Dates Modal (Global scope)
+  function closeEditCertDatesModal() {
+    document.getElementById('editCertDatesModal').classList.add('hidden');
+  }
+
+
+  // This block runs immediately when the script is parsed,
+  // populating the global variables.
+  const certificatesDataElement = document.getElementById('certificates-data');
+  if (certificatesDataElement) {
+      try {
+          certificatesData = JSON.parse(certificatesDataElement.dataset.certificates || '[]');
+          console.log("certificatesData populated:", certificatesData);
+      } catch (e) {
+          console.error("Error parsing certificatesData JSON:", e);
+          console.error("Raw certificates data:", certificatesDataElement.dataset.certificates);
+          certificatesData = []; // Fallback to empty array on error
+      }
+  } else {
+      console.error("Element with ID 'certificates-data' not found.");
+      certificatesData = []; // Fallback to empty array
+  }
+
+  // Data for add_certificate_modal.html needs to be passed explicitly to the include.
+  // We can't rely on global variables here because the modal's script might run before these are populated.
+ 
+  // The variables allSoftwareAppsData and allSoftwareModulesData here are for other potential dashboard scripts,
+  // but the modal will get its own copy.
+  allSoftwareAppsData = JSON.parse('{{ all_software_apps | tojson | safe }}' || '[]');
+  allSoftwareModulesData = JSON.parse('{{ all_software_modules_json | safe }}' || '[]');
+
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const softwareSelect = document.getElementById('software_select');
+    const modulesCheckboxesDiv = document.getElementById('modules_checkboxes');
+    const addCertModal = document.getElementById('addCertModal');
+
+    // This function should be defined within the modal's script or handle cases where elements are null
+    function populateModules() {
+      if (!softwareSelect || !modulesCheckboxesDiv) {
+        console.warn("Software select or modules checkboxes div not found in modal.");
+        return;
+      }
+      const selectedSoftwareId = softwareSelect.value;
+      modulesCheckboxesDiv.innerHTML = ''; // Clear previous modules
+
+      if (selectedSoftwareId) {
+        const relevantModules = allSoftwareModulesData.filter(module => 
+          module.software_id == selectedSoftwareId
+        );
+
+        if (relevantModules.length > 0) {
+          relevantModules.forEach(module => {
+            const checkboxDiv = document.createElement('div');
+            checkboxDiv.className = 'flex items-center';
+            checkboxDiv.innerHTML = `
+              <input type="checkbox" name="selected_modules" value="${module.id}" id="module_${module.id}"
+                     class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+              <label for="module_${module.id}" class="ml-2 block text-sm text-gray-700">${module.name}</label>
+            `;
+            modulesCheckboxesDiv.appendChild(checkboxDiv);
+          });
+        } else {
+          modulesCheckboxesDiv.innerHTML = '<p class="text-sm text-gray-500">No modules available for this software.</p>';
+        }
+      } else {
+        modulesCheckboxesDiv.innerHTML = '<p class="text-sm text-gray-500">Select a software to see modules.</p>';
+      }
+    }
+
+    // Attach event listener to software select dropdown
+    if (softwareSelect) {
+      softwareSelect.addEventListener('change', populateModules);
+    }
+
+    // Listen for when the addCertModal is opened to populate modules initially
+    if (addCertModal) {
+      const observer = new MutationObserver((mutationsList, observer) => {
+        for (const mutation of mutationsList) {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            if (!addCertModal.classList.contains('hidden')) {
+              populateModules();
+              // Disconnect observer after first successful populate to prevent re-triggering
+              observer.disconnect(); 
+            }
+          }
+        }
+      });
+      observer.observe(addCertModal, { attributes: true });
+    }
+  });
+</script>
 {% endblock %}
