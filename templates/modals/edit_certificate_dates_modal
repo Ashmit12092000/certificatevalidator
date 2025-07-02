@@ -1,0 +1,28 @@
+<div id="editCertDatesModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md transform transition-all duration-300 scale-100 opacity-100">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">Modify Certificate Dates</h2>
+      <form id="editCertDatesForm" method="POST" class="space-y-5">
+        <input type="hidden" id="editCertId" name="cert_id">
+        <div>
+          <label for="editActivationDate" class="block text-sm font-medium text-gray-700 mb-1">Activation Date</label>
+          <input type="date" name="activation_date" id="editActivationDate" required 
+                 class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition duration-150"/>
+        </div>
+        <div>
+          <label for="editExpirationDate" class="block text-sm font-medium text-gray-700 mb-1">Expiration Date</label>
+          <input type="date" name="expiration_date" id="editExpirationDate" required 
+                 class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition duration-150"/>
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button type="button" onclick="closeEditCertDatesModal()"
+                  class="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition duration-200">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-200">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+</div>
