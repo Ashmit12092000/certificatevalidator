@@ -26,10 +26,15 @@
       <div class="flex items-center space-x-6">
         <a href="{{ url_for('dashboard') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-200">Dashboard</a>
         <a href="{{ url_for('manage_customers') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-200">Manage Customers</a>
-        {% if session.get('role') == 'admin' %}
+        
+        {# Manage Certificate Types and Manage Software visible to Supervisor and Admin (HOD) #}
+        {% if session.get('role') == 'supervisor' or session.get('role') == 'admin_hod' %}
           <a href="{{ url_for('manage_certificates') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-200">Manage Certificate Types</a>
+          <a href="{{ url_for('manage_software') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-200">Manage Software</a>
         {% endif %}
-        {% if session.get('role') == 'approver' %}
+
+        {# Approval Queue visible to Admin (HOD) only #}
+        {% if session.get('role') == 'admin_hod' %} {# Changed to admin_hod only #}
           <a href="{{ url_for('approval_queue') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-200">Approval Queue</a>
         {% endif %}
         <a href="{{ url_for('report') }}" class="text-gray-600 hover:text-blue-600 font-medium transition duration-200">Customer Report</a>
